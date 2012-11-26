@@ -1,6 +1,7 @@
 # encoding: utf-8
 module GuitarTabs
   class GuitarPro
+    class InvalidFile < StandardError; end
     attr_reader :comments, :version
     attr_reader :title, :subtitle, :artist, :album, :author, :copyright, :writer, :instruction
     # @param[IO] file input stream
@@ -10,18 +11,15 @@ module GuitarTabs
     end
 
     def read_header
-      read_version
+      read_version rescue InvalidFile, "Invalid file format"
       if version.major == 3
-        puts "GP3"
         self.send(:extend, GP3)
       elsif version.major == 4
-        puts "GP4"
         self.send(:extend, GP4)
       elsif version.major == 5
-        puts "GP5"
         self.send(:extend, GP5)
       else
-        raise "Unknown version #{version}"
+        raise InvalidFile, "Unknown version #{version}"
       end
       read_info
       #read_lyrics
