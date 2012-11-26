@@ -14,4 +14,5 @@ Gem::Specification.new do |gem|
   gem.name          = "guitar_tabs"
   gem.require_paths = ["lib"]
   gem.version       = GuitarTabs::VERSION
+  gem.add_development_dependency "rake"
 end

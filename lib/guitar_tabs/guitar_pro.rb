@@ -11,7 +11,11 @@ module GuitarTabs
     end
 
     def read_header
-      read_version rescue InvalidFile, "Invalid file format"
+      begin
+        read_version
+      rescue
+        raise InvalidFile, "Invalid file format"
+      end
       if version.major == 3
         self.send(:extend, GP3)
       elsif version.major == 4
