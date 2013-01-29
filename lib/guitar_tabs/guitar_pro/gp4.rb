@@ -1,4 +1,11 @@
 module GuitarTabs::GuitarPro::GP4
+
+  def read_song
+    read_info
+    read_lyrics
+    #read_page_setup
+  end
+
   def read_info
     @title = read_string_int
     @subtitle = read_string_int

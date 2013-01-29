@@ -4,7 +4,7 @@ require File.expand_path('../lib/guitar_tabs/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Andriy Dmytrenko"]
   gem.email         = ["refresh.xss@gmail.com"]
-  gem.description   = %q{Library to read meta info from a gp5,gp4 files}
+  gem.description   = %q{Reading & parsing gp3, gp4, gp5 GuitarPro files}
   gem.summary       = %q{Guitar Tabs library}
   gem.homepage      = ""
 

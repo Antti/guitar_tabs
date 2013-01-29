@@ -1,20 +1,30 @@
 # encoding: utf-8
 module GuitarTabs
   class GuitarPro
+
     class InvalidFile < StandardError; end
+    PageSetup = Struct.new(:page_size, :page_margin, :score_size_proportion, :header_and_footer, :title,
+      :subtitle, :artist, :album, :words, :music, :words_and_music, :copyright, :page_number)
+    MidiChannel = Struct.new(:channel, :effect_channel, :instrument, :volume, :balance, :chorus, :reverb,
+      :phaser, :tremolo)
+
     attr_reader :comments, :version
     attr_reader :title, :subtitle, :artist, :album, :author, :copyright, :writer, :instruction
+    attr_reader :page_setup
+    attr_reader :tempo_name
     # @param[IO] file input stream
     def initialize(file)
       @file = file
-      read_header
+      read_version
+      read_song
     end
 
-    def read_header
+    def read_version
       begin
-        read_version
-      rescue
-        raise InvalidFile, "Invalid file format"
+        @version_string = read_string.tap {@file.seek(31,IO::SEEK_SET)} #We need to skip the rest of a free space.
+        @version = Version.from_string(@version_string)
+      rescue StandardError => e
+        raise InvalidFile, "Invalid file format (#{e.message})"
       end
       if version.major == 3
         self.send(:extend, GP3)
@@ -25,13 +35,6 @@ module GuitarTabs
       else
         raise InvalidFile, "Unknown version #{version}"
       end
-      read_info
-      #read_lyrics
-    end
-
-    def read_version
-      @version_string = read_string.tap {@file.seek(31,IO::SEEK_SET)} #We need to skip the rest of a free space.
-      @version = Version.from_string(@version_string)
     end
 
     private
@@ -40,6 +43,8 @@ module GuitarTabs
       str_size = read_int
       read_string(str_size-1)
     end
+
+    alias_method :read_int_size_check_byte_string, :read_string_int
 
     # Read array of int_strings
     def read_string_array_with_length
@@ -64,10 +69,35 @@ module GuitarTabs
       @file.getbyte
     end
 
+    def read_bool
+      read_byte != 0
+    end
+
     # Read GP int (4 bytes)
     def read_int
       bytes = @file.read(4).bytes.to_a
       bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0]
+    end
+
+    def skip(count)
+      @file.seek(count,IO::SEEK_CUR)
+    end
+
+    def read_midi_channels
+      @channels = 1.upto(64).map do |g|
+        channel = MidiChannel.new
+        channel.channel = g
+        channel.effect_channel = g
+        channel.instrument = read_int
+        channel.volume = read_byte
+        channel.balance  = read_byte
+        channel.chorus = read_byte
+        channel.reverb = read_byte
+        channel.phaser = read_byte
+        channel.tremolo = read_byte
+        skip(2)
+        channel
+      end
     end
 
     autoload :GP3, 'guitar_tabs/guitar_pro/gp3'
@@ -78,7 +108,6 @@ module GuitarTabs
 end
 
 if $0 == __FILE__
-  gp = GuitarPro.new(File.new(ARGV[0]))
-  #puts gp.comments
+  gp = GuitarTabs::GuitarPro.new(File.new(ARGV[0]))
   p gp
 end
