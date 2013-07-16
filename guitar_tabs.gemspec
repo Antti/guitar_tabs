@@ -15,4 +15,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = GuitarTabs::VERSION
   gem.add_development_dependency "rake"
+  gem.add_development_dependency "rspec"
+  gem.add_runtime_dependency "yell"
 end
