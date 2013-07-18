@@ -17,16 +17,27 @@ module GuitarTabs
     attr_reader :comments, :version
     attr_reader :title, :subtitle, :artist, :album, :author, :copyright, :writer, :instruction
     attr_reader :page_setup, :tempo_name, :measure_headers
-    # @param[IO] file input stream
-    def initialize(file)
-      @file = file
-      read_version
-      #read_song
+    attr_reader :reader
+    private :reader
+    # @param[IO] io input stream
+    def initialize(io)
+      @reader = IOReader.new(io)
+      @loaded = false
+      logger.level = 'gte.warn' unless ENV["DEBUG_GUITAR_TABS"]
     end
 
+    def load
+      return if @loaded
+      read_version
+      read_song
+      @loaded = true
+    end
+
+private
     def read_version
       begin
-        @version_string = read_string.tap {@file.seek(31,IO::SEEK_SET)} #We need to skip the rest of a free space.
+        @version_string = reader.read_string #We need to skip the rest of a free space.
+        reader.seek(31,IO::SEEK_SET)
         @version = Version.from_string(@version_string)
       rescue StandardError => e
         raise InvalidFile, "Invalid file format (#{e.message})"
@@ -44,65 +55,19 @@ module GuitarTabs
       end
     end
 
-    private
-    # Read chunk size and read string with a given size.
-    def read_string_int
-      str_size = read_int
-      read_string(str_size-1)
-    end
-
-    alias_method :read_int_size_check_byte_string, :read_string_int
-
-    # Read array of int_strings
-    def read_string_array_with_length
-      read_int.times.map{read_string_int}
-    end
-
-    # Read string size and string
-    def read_string_int2
-      str_size = read_int
-      @file.read(str_size).force_encoding('cp1251').encode('utf-8')
-    end
-
-    # String is actually len lenght, but read str_len - 1 every time
-    def read_string(size=0)
-      len = read_byte
-      c = size > 0 ? size : len
-      @file.read(c).force_encoding('cp1251').encode('utf-8')
-    end
-
-    #Read 1 byte
-    def read_byte
-      @file.getbyte
-    end
-
-    def read_bool
-      read_byte != 0
-    end
-
-    # Read GP int (4 bytes)
-    def read_int
-      bytes = @file.read(4).bytes.to_a
-      bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0]
-    end
-
-    def skip(count)
-      @file.seek(count,IO::SEEK_CUR)
-    end
-
     def read_midi_channels
       @midi_channels = 1.upto(MIDI_CHANNELS_COUNT).map do |g|
         channel = MidiChannel.new
         channel.channel = g
         channel.effect_channel = g
-        channel.instrument = read_int
-        channel.volume = read_byte
-        channel.balance  = read_byte
-        channel.chorus = read_byte
-        channel.reverb = read_byte
-        channel.phaser = read_byte
-        channel.tremolo = read_byte
-        skip(2)
+        channel.instrument = reader.read_int
+        channel.volume = reader.read_byte
+        channel.balance  = reader.read_byte
+        channel.chorus = reader.read_byte
+        channel.reverb = reader.read_byte
+        channel.phaser = reader.read_byte
+        channel.tremolo = reader.read_byte
+        reader.skip(2)
         channel
       end
     end
@@ -116,7 +81,7 @@ module GuitarTabs
     end
 
     def read_marker
-      title = read_int_size_check_byte_string
+      title = reader.read_int_size_check_byte_string
       color = read_color
       marker = Marker.new(title, color)
       logger.debug "Read marker #{marker}"
@@ -124,7 +89,7 @@ module GuitarTabs
     end
 
     def read_color
-      Color.new(read_byte, read_byte, read_byte, read_byte)
+      Color.new(reader.read_byte, reader.read_byte, reader.read_byte, reader.read_byte)
     end
 
     def logger
@@ -136,6 +101,7 @@ module GuitarTabs
     autoload :GP5, 'guitar_tabs/guitar_pro/gp5'
     autoload :GP6, 'guitar_tabs/guitar_pro/gp6'
     autoload :Version, 'guitar_tabs/guitar_pro/version'
+    autoload :IOReader, 'guitar_tabs/guitar_pro/io_reader'
   end
 end
 

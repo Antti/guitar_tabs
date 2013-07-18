@@ -1,4 +1,5 @@
 module GuitarTabs::GuitarPro::GP3
+  private
   def read_song
     read_info
     read_lyrics
