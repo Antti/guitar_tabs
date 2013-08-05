@@ -2,8 +2,8 @@ class GuitarTabs::GuitarPro::IOReader
   class IOError < StandardError; end
   attr_reader :io
   def initialize(io, encoding='cp1251')
-    @io = io
-    @encoding = encoding
+    @io, @encoding = io, encoding
+    @io.set_encoding(@encoding)
   end
   # Read chunk size and read string with a given size.
   def read_string_int
@@ -21,7 +21,7 @@ class GuitarTabs::GuitarPro::IOReader
   # Read string size and string
   def read_string_int2
     str_size = read_int
-    @io.read(str_size).force_encoding(@encoding).encode('utf-8')
+    @io.read(str_size).encode('utf-8')
   rescue
     raise IOError
   end
@@ -30,7 +30,7 @@ class GuitarTabs::GuitarPro::IOReader
   def read_string(size=0)
     len = read_byte
     c = size > 0 ? size : len
-    @io.read(c).force_encoding(@encoding).encode('utf-8')
+    @io.read(c).encode('utf-8')
   rescue
     raise IOError
   end
@@ -48,8 +48,7 @@ class GuitarTabs::GuitarPro::IOReader
 
   # Read GP int (4 bytes)
   def read_int
-    bytes = @io.read(4).bytes.to_a
-    bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0]
+    bytes = @io.read(4).unpack('L').first
   rescue
     raise IOError
   end
