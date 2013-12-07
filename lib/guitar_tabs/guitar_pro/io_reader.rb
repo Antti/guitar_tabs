@@ -1,9 +1,10 @@
+require 'stringio'
 class GuitarTabs::GuitarPro::IOReader
   class IOError < StandardError; end
   attr_reader :io
   def initialize(io, encoding='cp1251')
-    @io, @encoding = io, encoding
-    @io.set_encoding(@encoding)
+    @encoding = encoding
+    @io = io
   end
   # Read chunk size and read string with a given size.
   def read_string_int
@@ -21,25 +22,25 @@ class GuitarTabs::GuitarPro::IOReader
   # Read string size and string
   def read_string_int2
     str_size = read_int
-    @io.read(str_size).encode('utf-8')
-  rescue
-    raise IOError
+    @io.read(str_size).force_encoding(@encoding).encode('utf-8')
+  rescue => e
+    raise IOError, e.message
   end
 
   # String is actually len lenght, but read str_len - 1 every time
   def read_string(size=0)
     len = read_byte
     c = size > 0 ? size : len
-    @io.read(c).encode('utf-8')
-  rescue
-    raise IOError
+    @io.read(c).force_encoding(@encoding).encode('utf-8')
+  rescue => e
+    raise IOError, e.message
   end
 
   #Read 1 byte
   def read_byte
     @io.getbyte
-  rescue
-    raise IOError
+  rescue => e
+    raise IOError, e.message
   end
 
   def read_bool
@@ -49,8 +50,8 @@ class GuitarTabs::GuitarPro::IOReader
   # Read GP int (4 bytes)
   def read_int
     bytes = @io.read(4).unpack('L').first
-  rescue
-    raise IOError
+  rescue => e
+    raise IOError, e.message
   end
 
   def skip(count)
@@ -59,7 +60,7 @@ class GuitarTabs::GuitarPro::IOReader
 
   def seek(count, pos)
     @io.seek(count, pos)
-  rescue
-    raise IOError
+  rescue => e
+    raise IOError, e.message
   end
 end
