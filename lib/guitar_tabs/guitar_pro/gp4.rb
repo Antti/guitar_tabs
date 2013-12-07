@@ -1,8 +1,6 @@
 module GuitarTabs::GuitarPro::GP4
   private
   def read_song
-    logger.debug "Reading info"
-    read_info
     logger.debug "Reading lyrics"
     read_lyrics
     #read_page_setup

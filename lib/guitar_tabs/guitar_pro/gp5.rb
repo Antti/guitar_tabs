@@ -1,8 +1,6 @@
 module GuitarTabs::GuitarPro::GP5
   private
   def read_song
-    logger.debug "Reading info"
-    read_info
     logger.debug "Reading lyrics"
     read_lyrics
     logger.debug "Reading page setup"
@@ -29,6 +27,7 @@ module GuitarTabs::GuitarPro::GP5
   end
 
   def read_info
+    logger.debug "Reading info"
     @title = reader.read_string_int
     @subtitle = reader.read_string_int
     @artist = reader.read_string_int

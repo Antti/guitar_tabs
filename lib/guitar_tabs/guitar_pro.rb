@@ -20,17 +20,34 @@ module GuitarTabs
     attr_reader :reader
     private :reader
     # @param[IO] io input stream
-    def initialize(io)
+    def initialize(io, load_tab=false)
       @reader = IOReader.new(io)
       @loaded = false
-      logger.level = 'gte.warn' unless ENV["DEBUG_GUITAR_TABS"]
+      read_version
+      read_info
+      self.load if load_tab
     end
 
     def load
       return if @loaded
-      read_version
       read_song
       @loaded = true
+    end
+
+    def info
+      {
+        title: title,
+        subtitle: subtitle,
+        artist: artist,
+        album: album,
+        author: author,
+        copyright: copyright,
+        writer: writer,
+        instruction: instruction,
+        comments: comments,
+        triplet_feel: @triplet_feel,
+        gp_version: version.to_s
+      }
     end
 
 private
@@ -93,7 +110,9 @@ private
     end
 
     def logger
-      @logger ||= Yell.new(STDOUT)
+      @logger ||= Yell.new(STDOUT) do |l|
+        l.level = 'gte.warn' unless ENV["DEBUG_GUITAR_TABS"]
+      end
     end
 
     autoload :GP3, 'guitar_tabs/guitar_pro/gp3'
