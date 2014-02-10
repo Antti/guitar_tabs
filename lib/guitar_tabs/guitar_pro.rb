@@ -7,7 +7,11 @@ module GuitarTabs
 
     # @param[IO] io input stream
     def initialize(io, load_tab=false)
-      @reader = GP345Reader.new(io)
+      if GP345Reader.can_read?(io)
+        @reader = GP345Reader.new(io)
+      else
+        @reader = GPX.new(io)
+      end
       #@reader.load
     end
 
@@ -34,9 +38,9 @@ module GuitarTabs
       }
     end
 
-private
     autoload :GP345Reader, 'guitar_tabs/guitar_pro/gp345_reader'
     autoload :Version, 'guitar_tabs/guitar_pro/version'
+    autoload :GPX, 'guitar_tabs/guitar_pro/gpx'
   end
 end
 

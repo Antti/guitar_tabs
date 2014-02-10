@@ -14,13 +14,27 @@ class GuitarTabs::GuitarPro::GP345Reader
 
   attr_reader :reader
 
-  attr_reader :version, :info
+  attr_reader :version
   attr_reader :page_setup, :tempo_name, :measure_headers
 
+
+  def self.can_read?(io)
+    begin
+      self.new(io)
+      return true
+    rescue InvalidFile
+      return false
+    ensure
+      io.rewind
+    end
+  end
   def initialize(io)
     @reader = IOReader.new(io)
     @version = read_version
-    @info = read_info
+  end
+
+  def info
+    @info ||= read_info
   end
 
   def load
